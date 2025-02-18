@@ -14,7 +14,7 @@ phases:
   post_build:
     commands:
       - echo "Uploading Lambda package to S3 with versioning..."
-      - VERSION=$(git rev-parse HEAD)
+      - VERSION=$CODEBUILD_RESOLVED_SOURCE_VERSION
       - aws s3 cp ../agentai-cli-lambda.zip s3://$CODE_BUCKET/lambda/agentai-cli-lambda-$VERSION.zip
       - aws ssm put-parameter --name /agentai-cli/lambda/version --value $VERSION --type String --overwrite
 artifacts:
