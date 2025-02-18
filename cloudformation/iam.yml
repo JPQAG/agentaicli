@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM roles for AgentAiCli infrastructure
+
+Resources:
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-pipeline-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
+      Policies:
+        - PolicyName: CodePipelineCustomPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - !Sub arn:aws:s3:::${AWS::StackName}-*
+                  - !Sub arn:aws:s3:::${AWS::StackName}-*/*
+                  - !Sub arn:aws:s3:::agentaicli-*
+                  - !Sub arn:aws:s3:::agentaicli-*/*
+              - Effect: Allow
+                Action:
+                  - cloudformation:*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - codebuild:*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-build-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+      Policies:
+        - PolicyName: CodeBuildCustomPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - !Sub arn:aws:s3:::${AWS::StackName}-*
+                  - !Sub arn:aws:s3:::${AWS::StackName}-*/*
+                  - !Sub arn:aws:s3:::agentaicli-*
+                  - !Sub arn:aws:s3:::agentaicli-*/*
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                Resource: 
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/agentai-cli/*
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+Outputs:
+  CodePipelineRoleArn:
+    Description: ARN of the CodePipeline service role
+    Value: !GetAtt CodePipelineRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-pipeline-role-arn
+  
+  CodeBuildRoleArn:
+    Description: ARN of the CodeBuild service role
+    Value: !GetAtt CodeBuildRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-build-role-arn
+  
+  LambdaExecutionRoleArn:
+    Description: ARN of the Lambda execution role
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-lambda-role-arn 

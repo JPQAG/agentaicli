@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for deploying the AgentAiCli Lambda function.
+
+Parameters:
+  LambdaCodeBucket:
+    Type: String
+    Description: S3 bucket where the lambda code is stored.
+  LambdaCodeKey:
+    Type: String
+    Description: S3 key for the lambda package.
+
+Resources:
+  AgentAiCliLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: AgentAiCliLambda
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Role: arn:aws:iam::123456789012:role/YourLambdaExecutionRole
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Timeout: 10 

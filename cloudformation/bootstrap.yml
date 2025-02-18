@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Bootstrap template for AgentAiCli infrastructure - creates necessary S3 buckets
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment name for resource naming
+
+Resources:
+  LambdaCodeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub agentaicli-lambda-code-${AWS::AccountId}-${Environment}
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 90
+
+  LambdaCodeBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LambdaCodeBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFormationAndCodeBuildAccess
+            Effect: Allow
+            Principal:
+              Service: 
+                - cloudformation.amazonaws.com
+                - codebuild.amazonaws.com
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:ListBucket
+            Resource:
+              - !Sub arn:aws:s3:::${LambdaCodeBucket}
+              - !Sub arn:aws:s3:::${LambdaCodeBucket}/*
+
+Outputs:
+  LambdaCodeBucketName:
+    Description: Name of the S3 bucket for Lambda code storage
+    Value: !Ref LambdaCodeBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-LambdaCodeBucket 
